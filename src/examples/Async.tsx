@@ -1,6 +1,8 @@
+import { Button } from '@chakra-ui/button';
 import { Container, Heading, Text } from '@chakra-ui/layout';
 import { Select } from '@chakra-ui/select';
 import React from 'react';
+import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import {
   useRecoilValue,
   selectorFamily,
@@ -11,10 +13,13 @@ import { getWeather } from './fakeApi';
 
 const userState = selectorFamily({
   key: 'user',
-  get: (userId: number) => async () =>
-    await fetch(
+  get: (userId: number) => async () => {
+    const data = await fetch(
       `https://jsonplaceholder.typicode.com/users/${userId}`,
-    ).then((res) => res.json()),
+    ).then((res) => res.json());
+    if (userId === 4) throw new Error('User does not exits');
+    return data;
+  },
 });
 
 const weatherRequestIdState = atomFamily({
@@ -68,6 +73,18 @@ const UserData = ({ userId }: { userId: number }) => {
   );
 };
 
+const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
+  return (
+    <div>
+      <Heading as="h2" size="md" mb={1}>
+        Something went wrong
+      </Heading>
+      <Text>{error.message}</Text>
+      <Button onClick={resetErrorBoundary}>OK</Button>
+    </div>
+  );
+};
+
 export const Async = () => {
   const [userId, setUserId] = React.useState<undefined | number>(undefined);
   const handleUserChange = (user: any) =>
@@ -90,16 +107,21 @@ export const Async = () => {
         <option value="1">User 1</option>
         <option value="2">User 2</option>
         <option value="3">User 3</option>
+        <option value="4">User 4</option>
       </Select>
       {userId && (
-        <div>
+        <ErrorBoundary
+          FallbackComponent={ErrorFallback}
+          onReset={() => setUserId(undefined)}
+          resetKeys={[userId]}
+        >
           <React.Suspense fallback={<div>Loading A User ...</div>}>
             <UserData {...{ userId }} />
           </React.Suspense>
           <React.Suspense fallback={<div>Loading Temperature ...</div>}>
             <UserWeather {...{ userId }} />
           </React.Suspense>
-        </div>
+        </ErrorBoundary>
       )}
     </Container>
   );
