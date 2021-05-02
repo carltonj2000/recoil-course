@@ -24,7 +24,7 @@ function Canvas() {
       <Toolbar />
       <EditProperties />
       {elements.map((id) => (
-        <Rectangle id={id} />
+        <Rectangle key={id} {...{ id }} />
       ))}
     </PageContainer>
   );
