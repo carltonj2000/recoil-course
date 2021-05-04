@@ -11,6 +11,7 @@ import { Selectors } from './examples/Selectors';
 import { Async } from './examples/Async';
 import { AtomEffects } from './examples/AtomEffects';
 import { AtomEffects as AtomEffects2 } from './examples/AtomEffects2';
+import { AtomEffects as AtomEffects3 } from './examples/AtomEffects3';
 
 ReactDOM.render(
   <React.StrictMode>
@@ -32,6 +33,9 @@ ReactDOM.render(
             </Route>
             <Route path="/examples/atom-effects-2">
               <AtomEffects2 />
+            </Route>
+            <Route path="/examples/atom-effects-3">
+              <AtomEffects3 />
             </Route>
             <Route>
               <Canvas />
