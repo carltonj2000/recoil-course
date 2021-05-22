@@ -18,17 +18,31 @@ type ItemType = {
   checked: boolean;
 };
 
+class CachedAPI {
+  cachedItems: Record<string, ItemType> | undefined;
+  private getItems = async () => {
+    if (!this.cachedItems) {
+      this.cachedItems = await shoppingListAPI.getItems();
+    }
+    return this.cachedItems;
+  };
+  getIds = async () => {
+    const items = await this.getItems();
+    return Object.keys(items).map((id) => parseInt(id));
+  };
+  getItem = async (id: number) => {
+    const items = await this.getItems();
+    if (items[id] === undefined) return new DefaultValue();
+    return items[id];
+  };
+}
+
+const { getIds, getItem } = new CachedAPI();
+
 const idsState = atom<number[]>({
   key: 'ids',
   default: [],
-  effects_UNSTABLE: [
-    ({ setSelf }) => {
-      const itemsPromise = shoppingListAPI.getItems().then((items) => {
-        return Object.keys(items).map((id) => parseInt(id));
-      });
-      setSelf(itemsPromise);
-    },
-  ],
+  effects_UNSTABLE: [({ setSelf }) => setSelf(getIds())],
 });
 
 const itemState = atomFamily<ItemType, number>({
@@ -36,11 +50,7 @@ const itemState = atomFamily<ItemType, number>({
   default: { label: '', checked: false },
   effects_UNSTABLE: (id) => [
     ({ onSet, setSelf }) => {
-      const itemPromise = shoppingListAPI.getItem(id).then((item) => {
-        if (item === undefined) return new DefaultValue();
-        else return item;
-      });
-      setSelf(itemPromise);
+      setSelf(getItem(id));
       onSet((item) => {
         if (item instanceof DefaultValue) {
           shoppingListAPI.deleteItem(id);
