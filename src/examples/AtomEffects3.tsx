@@ -35,9 +35,13 @@ class CachedAPI {
     if (items[id] === undefined) return new DefaultValue();
     return items[id];
   };
+  onRefresh = (callback: (newItem: ItemType) => void) => {
+    // register callback and call it when the atom changes
+  };
 }
 
-const { getIds, getItem } = new CachedAPI();
+const cachedAPI = new CachedAPI();
+const { getIds, getItem } = cachedAPI;
 
 const idsState = atom<number[]>({
   key: 'ids',
@@ -45,12 +49,23 @@ const idsState = atom<number[]>({
   effects_UNSTABLE: [({ setSelf }) => setSelf(getIds())],
 });
 
+/*
+ * effect below allows for "realtime" update but if that is
+ * not needed a selector can also be used
+ */
+
 const itemState = atomFamily<ItemType, number>({
   key: 'item',
   default: { label: '', checked: false },
   effects_UNSTABLE: (id) => [
     ({ onSet, setSelf, trigger }) => {
       setSelf(getItem(id));
+
+      cachedAPI.onRefresh((newItem) => {
+        console.log('item changed', newItem);
+        setSelf(newItem);
+      });
+
       onSet((item, itemOld) => {
         if (itemOld instanceof DefaultValue && trigger === 'get') return;
         if (item instanceof DefaultValue) {
